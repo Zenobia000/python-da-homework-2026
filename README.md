@@ -114,20 +114,40 @@ python -m pytest tests/ -v
 
 ### `! [remote rejected] main -> main (permission denied)`
 
-代表你 push 到的 repo **不是你的 fork**（沒有寫入權限）。99% 是 remote URL 設錯了。
+「驗證成功，但你沒有寫入權」。兩種可能：
+
+**狀況 1：remote URL 不是你的 fork**
 
 ```bash
-# 1. 檢查 remote
+# 檢查 remote
 git remote -v
 
-# 2. 改成你的 fork
+# 若 origin 指向別人（老師、課程 cookbook）的 repo，改成你的 fork
 git remote set-url origin https://github.com/<你的帳號>/<repo 名稱>.git
-
-# 3. 重新 push
 git push
 ```
 
 > 另一種誤觸發：在課程 cookbook 的子目錄裡執行 `git push` — 因為 `.git` 在 cookbook 根目錄，會 push 到 cookbook 的 remote。請務必在你 clone 的 fork repo 內操作。
+
+**狀況 2：URL 對了，但 git 用了「另一個 GitHub 帳號」的 token 認證（多帳號用戶才會撞）**
+
+如果你在同一台電腦登入過多個 GitHub 帳號（例如公司 + 個人 + 學校），git 的 credential helper 會快取上一個登入的 token。push 時用錯 token → 被認成別人 → 沒有寫入權 → permission denied。
+
+```bash
+# 1. 檢查 gh CLI 目前用哪個帳號（Active account 那行）
+gh auth status
+
+# 2. 切到你 fork 所屬的帳號
+gh auth switch -u <你的帳號>
+
+# 3. 如果該帳號還沒登入過，加進來
+gh auth login    # 選 GitHub.com → HTTPS → Login with a web browser
+
+# 4. 重新 push
+git push
+```
+
+> 沒裝 `gh` 也可以：清掉 credential helper 的快取（macOS：`git credential-osxkeychain erase` 鍵入 `host=github.com` + 兩個 Enter；Linux：`git config --global --unset credential.helper` 後重 push 會跳出帳密輸入框）。
 
 ### `Updates were rejected because the remote contains work...`
 
